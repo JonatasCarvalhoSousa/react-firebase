@@ -12,7 +12,11 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 import "./app.css";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+} from "firebase/auth";
 import { async } from "@firebase/util";
 
 function App() {
@@ -22,6 +26,8 @@ function App() {
   const [posts, setPosts] = useState([]);
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [users, setUsers] = useState("");
+  const [userDetails, setUserDetails] = useState({});
 
   async function handleAdd() {
     // await setDoc(doc(db, "posts", "12345"), {
@@ -140,9 +146,43 @@ function App() {
       });
   }
 
+  async function logarUsuario() {
+    await signInWithEmailAndPassword(auth, email, senha)
+      .then((value) => {
+        setUserDetails({
+          uid: value.user.uid,
+          email: value.user.email,
+        });
+        setUsers(true);
+        setEmail("");
+        setSenha("");
+      })
+      .catch(() => {
+        console.log("Error ao fazer Login");
+      });
+  }
+
+  async function fazerLogout() {
+    await signOut(auth);
+    setUsers(false);
+    setUserDetails({});
+  }
+
   return (
     <div>
       <h1>React Js + firebase </h1>
+
+      {users && (
+        <div>
+          <strong>Seja bem-vindo(a) (Você está logado!)</strong> <br></br>
+          <span>
+            ID: {userDetails.uid} - Email: {userDetails.email}
+          </span>
+          <br></br>
+          <button onClick={fazerLogout}>Fazer logout!</button>
+        </div>
+      )}
+
       <div className="container">
         <h2>Usuarios</h2>
         <label>Email:</label>
@@ -160,6 +200,9 @@ function App() {
         />
         <br></br>
         <button onClick={novoUsuario}>Cadastrar</button>
+        <br></br>
+
+        <button onClick={logarUsuario}>Fazer Login</button>
       </div>
       <br></br>
       <hr></hr>
