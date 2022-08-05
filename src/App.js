@@ -16,6 +16,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
+  onAuthStateChanged,
 } from "firebase/auth";
 import { async } from "@firebase/util";
 
@@ -73,6 +74,25 @@ function App() {
       });
     }
     loadPosts();
+  }, []);
+
+  useEffect(() => {
+    async function checkLogin() {
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          setUsers(true);
+          setUserDetails({
+            uid: user.uid,
+            email: user.email,
+          });
+        } else {
+          setUsers(false);
+          setUserDetails({});
+        }
+      });
+    }
+
+    checkLogin();
   }, []);
 
   async function handleBuscar() {
