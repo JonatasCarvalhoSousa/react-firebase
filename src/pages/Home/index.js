@@ -31,7 +31,7 @@ export default function Home() {
       <span>Gerencie sua agenda de forma fácil.</span>
       <form className="form" onSubmit={handleLogin}>
         <input
-          type="texrt"
+          type="text"
           placeholder="Digite seu e-mail"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
