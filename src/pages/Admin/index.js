@@ -1,15 +1,40 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import { auth } from "../../firebaseConnection";
+import { auth, db } from "../../firebaseConnection";
 import { signOut } from "firebase/auth";
 import "./admin.css";
+import { addDoc, collection } from "firebase/firestore";
 
 export default function Admin() {
   const [tarefaInput, setTarefaInput] = useState("");
+  const [user, setUser] = useState({});
 
-  function handleRegister(e) {
+  useEffect(() => {
+    async function loadTarefas() {
+      const userDetail = localStorage.getItem("@detailUser");
+      setUser(JSON.parse(userDetail));
+    }
+    loadTarefas();
+  }, []);
+
+  async function handleRegister(e) {
     e.preventDefault();
-    alert("Clicou");
+
+    if (tarefaInput === "") {
+      alert("Insira alguama tardefa!");
+    }
+
+    await addDoc(collection(db, "tarefas"), {
+      tarefas: tarefaInput,
+      created: new Date(),
+      uid: user?.uid,
+    })
+      .then(() => {
+        setTarefaInput();
+      })
+      .catch((error) => {
+        alert("Houve um erro:" + error + "tente novamente!");
+      });
   }
 
   async function handleLogout() {
@@ -24,7 +49,7 @@ export default function Admin() {
         <textarea
           placeholder="Digite sua tarefa..."
           value={tarefaInput}
-          onChange={(e) => setTarefaInput(e.targer.value)}
+          onChange={(e) => setTarefaInput(e.target.value)}
         />
 
         <button className="btn-register" type="submit">
