@@ -1,47 +1,94 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from 'react'
+import './admin.css'
 
-import { auth, db } from "../../firebaseConnection";
-import { signOut } from "firebase/auth";
-import "./admin.css";
-import { addDoc, collection } from "firebase/firestore";
+import { auth, db } from '../../firebaseConnection'
+import { signOut } from 'firebase/auth'
 
-export default function Admin() {
-  const [tarefaInput, setTarefaInput] = useState("");
-  const [user, setUser] = useState({});
+import { 
+  addDoc,
+  collection,
+  onSnapshot,
+  query,
+  orderBy,
+  where,
+  doc,
+  deleteDoc,
+} from 'firebase/firestore'
+
+export default function Admin(){
+  const [tarefaInput, setTarefaInput] = useState('')
+  const [user, setUser] = useState({})
+
+  const [tarefas, setTarefas] = useState([]);
 
   useEffect(() => {
-    async function loadTarefas() {
-      const userDetail = localStorage.getItem("@detailUser");
-      setUser(JSON.parse(userDetail));
-    }
-    loadTarefas();
-  }, []);
+    async function loadTarefas(){
+      const userDetail = localStorage.getItem("@detailUser")
+      setUser(JSON.parse(userDetail))
 
-  async function handleRegister(e) {
+      if(userDetail){
+        const data = JSON.parse(userDetail);
+        
+        const tarefaRef = collection(db, "tarefas")
+        const q = query(tarefaRef, orderBy("created", "desc"), where("userUid", "==", data?.uid))
+
+        const unsub = onSnapshot(q, (snapshot) => {
+          let lista = [];
+
+          snapshot.forEach((doc)=> {
+            lista.push({
+              id: doc.id,
+              tarefa: doc.data().tarefa,
+              userUid: doc.data().userUid
+            })
+          })
+          
+          setTarefas(lista);
+
+        })
+
+      }
+
+    }
+
+    loadTarefas();
+  }, [])
+
+  async function handleRegister(e){
     e.preventDefault();
 
-    if (tarefaInput === "") {
-      alert("Insira alguama tardefa!");
+    if(tarefaInput === ''){
+      alert("Digite sua tarefa...")
+      return;
     }
 
     await addDoc(collection(db, "tarefas"), {
-      tarefas: tarefaInput,
+      tarefa: tarefaInput,
       created: new Date(),
-      uid: user?.uid,
+      userUid: user?.uid
     })
-      .then(() => {
-        setTarefaInput();
-      })
-      .catch((error) => {
-        alert("Houve um erro:" + error + "tente novamente!");
-      });
+    .then(() => {
+      console.log("TAREFA REGISTRADA")
+      setTarefaInput('')
+    })
+    .catch((error) => {
+      console.log("ERRO AO REGISTRAR " + error)
+    })
+
+
   }
 
-  async function handleLogout() {
+  async function handleLogout(){
     await signOut(auth);
   }
 
-  return (
+  async function deleteItem(id){
+
+    const docRef = doc(db, "tarefas", id)
+    await deleteDoc(docRef)
+  }
+
+  return(
     <div className="admin-container">
       <h1>Minhas tarefas</h1>
 
@@ -49,25 +96,26 @@ export default function Admin() {
         <textarea
           placeholder="Digite sua tarefa..."
           value={tarefaInput}
-          onChange={(e) => setTarefaInput(e.target.value)}
+          onChange={(e) => setTarefaInput(e.target.value) }
         />
 
-        <button className="btn-register" type="submit">
-          Registrar tarefa{" "}
-        </button>
+        <button className="btn-register" type="submit">Registrar tarefa</button>
       </form>
 
-      <article className="list">
-        <p>jhskadsjfs dfv bj dsfk mgfn gnd</p>
+      {tarefas.map((item) => (
+
+        <article key={item.id} className="list">
+        <p>{item.tarefa}</p>
         <div>
           <button>Editar</button>
-          <button className="btn-delete"></button>
+          <button onClick={() => deleteItem(item.id)} className="btn-delete">Concluir</button>
         </div>
-      </article>
+        </article>
 
-      <button className="btn-logout" onClick={handleLogout}>
-        Sair
-      </button>
+      ))}
+
+      <button className="btn-logout" onClick={handleLogout}>Sair</button>
+
     </div>
-  );
+  )
 }
