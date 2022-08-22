@@ -13,11 +13,13 @@ import {
   where,
   doc,
   deleteDoc,
+  updateDoc
 } from 'firebase/firestore'
 
 export default function Admin(){
   const [tarefaInput, setTarefaInput] = useState('')
   const [user, setUser] = useState({})
+  const [edit, setEdit] = useState({})
 
   const [tarefas, setTarefas] = useState([]);
 
@@ -62,6 +64,11 @@ export default function Admin(){
       return;
     }
 
+    if(edit?.id){
+      handleUpdateRegiter();
+      return;
+    }
+
     await addDoc(collection(db, "tarefas"), {
       tarefa: tarefaInput,
       created: new Date(),
@@ -88,6 +95,29 @@ export default function Admin(){
     await deleteDoc(docRef)
   }
 
+  function editItem(item){
+
+    setTarefaInput(item.tarefa)
+    setEdit(item)
+  }
+
+  async function handleUpdateRegiter(){
+    const docRef = doc(db, "tarefas", edit?.id)
+    await updateDoc(docRef, {
+      tarefa: tarefaInput
+    })
+    .then(() => {
+      console.log("Tarefa Atualizada")
+      setTarefaInput('')
+      setEdit({})
+    }).catch(() => {
+      console.log("Erro ao atualizar")
+      setTarefaInput('')
+      setEdit({})
+    })
+
+  }
+
   return(
     <div className="admin-container">
       <h1>Minhas tarefas</h1>
@@ -99,7 +129,14 @@ export default function Admin(){
           onChange={(e) => setTarefaInput(e.target.value) }
         />
 
+      {Object.keys(edit).length > 0 ? (
+        <button className="btn-register" type="submit">Atualizar tarefa</button>
+
+      ) : (
         <button className="btn-register" type="submit">Registrar tarefa</button>
+
+      )}
+
       </form>
 
       {tarefas.map((item) => (
@@ -107,7 +144,7 @@ export default function Admin(){
         <article key={item.id} className="list">
         <p>{item.tarefa}</p>
         <div>
-          <button>Editar</button>
+          <button onClick={() => editItem(item)}>Editar</button>
           <button onClick={() => deleteItem(item.id)} className="btn-delete">Concluir</button>
         </div>
         </article>
